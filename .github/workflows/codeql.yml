@@ -96,3 +96,11 @@ jobs:
       uses: github/codeql-action/analyze@v3
       with:
         category: "/language:${{matrix.language}}"
+    - name: Read SARIF and Print Issues
+      run: |
+          echo "=== Extracting CodeQL Issues ==="
+          if [ -f /home/runner/work/phoenix/results/javascript.sarif ]; then
+            jq '.runs[].results[] | {rule: .ruleId, message: .message.text, severity: .level}' /home/runner/work/code-ql-demo/results/javascript.sarif
+          else
+            echo "No SARIF file found."
+          fi
