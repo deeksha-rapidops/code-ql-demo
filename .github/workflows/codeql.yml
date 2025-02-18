@@ -96,11 +96,21 @@ jobs:
       uses: github/codeql-action/analyze@v3
       with:
         category: "/language:${{matrix.language}}"
+        fail-on-severity: all  # 🚀 This will fail the build if any issue is found
     - name: Read SARIF and Print Issues
       run: |
           echo "=== Extracting CodeQL Issues ==="
-          if [ -f /home/runner/work/code-ql-demo/results/javascript.sarif ]; then
-            jq '.runs[].results[] | {rule: .ruleId, message: .message.text, severity: .level}' /home/runner/work/code-ql-demo/results/javascript.sarif
+          SARIF_FILE="/home/runner/work/code-ql-demo/results/javascript.sarif"
+          
+          if [ -f "$SARIF_FILE" ]; then
+            ISSUES=$(jq '.runs[].results | length' "$SARIF_FILE")
+            if [ "$ISSUES" -gt 0 ]; then
+              jq '.runs[].results[] | {rule: .ruleId, message: .message.text, severity: .level}' "$SARIF_FILE"
+              echo "❌ CodeQL found $ISSUES issue(s). Failing build."
+              exit 1  # 🚀 This will make the CI fail if issues are detected
+            else
+              echo "✅ No CodeQL issues found."
+            fi
           else
-            echo "No SARIF file found."
+            echo "No SARIF file found. Skipping."
           fi
